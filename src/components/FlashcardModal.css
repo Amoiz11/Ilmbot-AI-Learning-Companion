@@ -1,0 +1,454 @@
+/* FlashcardModal.css - Shared 3D Flip Card Modal for Learning Coach, Coding Coach & Smart Revision */
+
+.flashcards-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: flashcardFadeIn 200ms ease forwards;
+}
+
+@keyframes flashcardFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Base Panel */
+.flashcard-modal-panel {
+  width: 100%;
+  max-width: 580px;
+  border-radius: 24px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  animation: flashcardZoomIn 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes flashcardZoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Learning Coach Emerald Theme */
+.flashcard-modal-panel.theme-learning,
+.glass-modal-panel {
+  background: rgba(18, 18, 18, 0.92);
+  border: 1px solid rgba(57, 255, 20, 0.3);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(57, 255, 20, 0.15);
+}
+
+/* Coding Coach Cyan Theme */
+.flashcard-modal-panel.theme-coding,
+.coding-glass-modal-panel {
+  background: rgba(10, 16, 22, 0.95);
+  border: 1px solid rgba(0, 242, 254, 0.35);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(0, 242, 254, 0.18);
+}
+
+/* Header */
+.flashcard-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flashcard-modal-title {
+  font-family: var(--font-heading, inherit);
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.flashcard-modal-panel.theme-learning .flashcard-modal-title {
+  color: var(--green-primary, #39FF14);
+}
+
+.flashcard-modal-panel.theme-coding .flashcard-modal-title {
+  color: #00F2FE;
+}
+
+.close-modal-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94A3B8;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+
+.close-modal-btn:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Interactive 3D Flip Card Container */
+.flashcard-3d-wrapper {
+  perspective: 1000px;
+  height: 240px;
+  width: 100%;
+  cursor: pointer;
+  user-select: none;
+}
+
+.flashcard-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 600ms cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.flashcard-inner.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.flashcard-front, .flashcard-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 20px;
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+}
+
+/* Learning Coach Cards */
+.flashcard-modal-panel.theme-learning .flashcard-front {
+  background: radial-gradient(circle at 90% 10%, rgba(57, 255, 20, 0.08) 0%, transparent 45%),
+              linear-gradient(135deg, #121413 0%, #0A0B0A 100%);
+  border: 1px solid rgba(57, 255, 20, 0.32);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6),
+              0 0 20px rgba(57, 255, 20, 0.12),
+              inset 0 0 20px rgba(57, 255, 20, 0.03);
+}
+
+.flashcard-modal-panel.theme-learning .flashcard-back {
+  background: radial-gradient(circle at 90% 10%, rgba(57, 255, 20, 0.1) 0%, transparent 45%),
+              linear-gradient(135deg, #131614 0%, #0A0C0A 100%);
+  border: 1px solid rgba(57, 255, 20, 0.4);
+  transform: rotateY(180deg);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6),
+              0 0 22px rgba(57, 255, 20, 0.14),
+              inset 0 0 20px rgba(57, 255, 20, 0.04);
+}
+
+.flashcard-modal-panel.theme-learning .card-tag {
+  color: var(--green-primary, #39FF14);
+}
+
+/* Coding Coach Cards */
+.flashcard-modal-panel.theme-coding .flashcard-front {
+  background: radial-gradient(circle at 90% 10%, rgba(0, 242, 254, 0.08) 0%, transparent 45%),
+              linear-gradient(135deg, #0D151D 0%, #080D13 100%);
+  border: 1px solid rgba(0, 242, 254, 0.32);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6),
+              0 0 20px rgba(0, 242, 254, 0.12),
+              inset 0 0 20px rgba(0, 242, 254, 0.03);
+}
+
+.flashcard-modal-panel.theme-coding .flashcard-back {
+  background: radial-gradient(circle at 90% 10%, rgba(0, 242, 254, 0.1) 0%, transparent 45%),
+              linear-gradient(135deg, #0F1822 0%, #090E14 100%);
+  border: 1px solid rgba(0, 242, 254, 0.4);
+  transform: rotateY(180deg);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6),
+              0 0 22px rgba(0, 242, 254, 0.14),
+              inset 0 0 20px rgba(0, 242, 254, 0.04);
+}
+
+.flashcard-modal-panel.theme-coding .card-tag {
+  color: #00F2FE;
+}
+
+/* Watermark & Typography */
+.card-watermark {
+  position: absolute;
+  right: -10px;
+  bottom: -15px;
+  opacity: 0.07;
+  pointer-events: none;
+  z-index: 1;
+  transform: rotate(-12deg);
+}
+
+.card-tag, .card-question, .card-answer, .card-flip-prompt {
+  position: relative;
+  z-index: 2;
+}
+
+.card-tag {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.card-question {
+  font-size: 18px;
+  font-weight: 600;
+  color: #FFFFFF;
+  line-height: 1.4;
+  text-align: center;
+  margin: auto 0;
+  padding: 0 8px;
+}
+
+.card-answer {
+  font-size: 15px;
+  color: #E2E8F0;
+  line-height: 1.5;
+  text-align: center;
+  margin: auto 0;
+  white-space: pre-line;
+  padding: 0 8px;
+}
+
+.card-flip-prompt {
+  font-size: 12px;
+  color: #94A3B8;
+  text-align: center;
+}
+
+/* Nav Controls */
+.flashcard-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+}
+
+.nav-counter {
+  font-size: 13px;
+  color: #CBD5E1;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 6px 16px;
+  border-radius: 8px;
+}
+
+.card-nav-btn {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 180ms ease;
+}
+
+/* Learning Nav Button */
+.flashcard-modal-panel.theme-learning .card-nav-btn {
+  border: 1px solid rgba(57, 255, 20, 0.25);
+  color: var(--green-primary, #39FF14);
+}
+
+.flashcard-modal-panel.theme-learning .card-nav-btn:hover:not(:disabled) {
+  background: rgba(57, 255, 20, 0.12);
+  border-color: rgba(57, 255, 20, 0.5);
+}
+
+/* Coding Nav Button */
+.flashcard-modal-panel.theme-coding .card-nav-btn {
+  border: 1px solid rgba(0, 242, 254, 0.2);
+  color: #38BDF8;
+}
+
+.flashcard-modal-panel.theme-coding .card-nav-btn:hover:not(:disabled) {
+  background: rgba(0, 242, 254, 0.12);
+  color: #00F2FE;
+  border-color: rgba(0, 242, 254, 0.4);
+}
+
+.card-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .flashcard-modal-panel {
+    padding: 20px 16px;
+    gap: 16px;
+  }
+  .flashcard-3d-wrapper {
+    height: 220px;
+  }
+  .card-question {
+    font-size: 16px;
+  }
+  .card-answer {
+    font-size: 14px;
+  }
+}
+
+/* Badge & Header Buttons */
+.flashcard-count-badge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.flashcard-modal-panel.theme-learning .flashcard-count-badge {
+  background: rgba(57, 255, 20, 0.12);
+  border: 1px solid rgba(57, 255, 20, 0.3);
+  color: var(--green-primary, #39FF14);
+}
+
+.flashcard-modal-panel.theme-coding .flashcard-count-badge {
+  background: rgba(0, 242, 254, 0.12);
+  border: 1px solid rgba(0, 242, 254, 0.3);
+  color: #00F2FE;
+}
+
+.card-regenerate-icon-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #CBD5E1;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 180ms ease;
+}
+
+.card-regenerate-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+}
+
+/* Modal States: Loading, Generating, Error, Empty */
+.flashcard-modal-state {
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 20px;
+  gap: 14px;
+}
+
+.state-heading {
+  font-family: var(--font-heading, inherit);
+  font-size: 18px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.state-desc {
+  font-size: 13.5px;
+  color: #94A3B8;
+  max-width: 420px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.state-icon-cards {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted, #94A3B8);
+}
+
+.state-icon-error {
+  font-size: 32px;
+}
+
+/* Spinner */
+.flashcard-spinner {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  animation: flashcardSpin 0.8s linear infinite;
+}
+
+.flashcard-spinner.theme-learning {
+  border-top-color: var(--green-primary, #39FF14);
+}
+
+.flashcard-spinner.theme-coding {
+  border-top-color: #00F2FE;
+}
+
+@keyframes flashcardSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* Primary Action Button */
+.flashcard-btn-primary {
+  padding: 10px 22px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.flashcard-btn-primary.theme-learning {
+  background: var(--green-primary, #39FF14);
+  color: #050B08;
+  border: 1px solid rgba(57, 255, 20, 0.8);
+  box-shadow: 0 0 16px rgba(57, 255, 20, 0.35);
+}
+
+.flashcard-btn-primary.theme-learning:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 24px rgba(57, 255, 20, 0.6);
+}
+
+.flashcard-btn-primary.theme-coding {
+  background: #00F2FE;
+  color: #030D14;
+  border: 1px solid rgba(0, 242, 254, 0.8);
+  box-shadow: 0 0 16px rgba(0, 242, 254, 0.35);
+}
+
+.flashcard-btn-primary.theme-coding:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 24px rgba(0, 242, 254, 0.6);
+}
+

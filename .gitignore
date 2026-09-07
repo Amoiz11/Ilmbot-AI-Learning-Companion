@@ -1,0 +1,64 @@
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# Build output
+dist/
+build/
+dist-ssr/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.venv/
+venv/
+backend/.venv/
+backend/__pycache__/
+
+# Database
+local_dev.db
+backend/local_dev.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Uploads (user-generated content)
+backend/uploads/documents/*
+backend/uploads/images/*
+!backend/uploads/documents/.gitkeep
+!backend/uploads/images/.gitkeep
+
+# Internal development docs
+CURSOR_WORKLOG.md
+HANDOVER.md
+CLEANUP_SUMMARY.md
+DELETE_AUDIT_REPORT.md
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
