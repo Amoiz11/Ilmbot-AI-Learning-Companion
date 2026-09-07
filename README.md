@@ -153,7 +153,7 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 npm run dev
 ```
 
-The app will be available at **http://localhost:5173**.
+The app will be available at ilmbot-ai-learning-companion.vercel.app
 
 ---
 
