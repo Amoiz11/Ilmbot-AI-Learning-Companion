@@ -113,6 +113,8 @@ IlmBot/
 
 ## 🚀 Local Setup
 
+> 💡 **Prefer testing right away without installing locally?** You can access the fully deployed [**Live Web App (Vercel)**](https://ilmbot-ai-learning-companion.vercel.app).
+
 ### Prerequisites
 
 - **Node.js** ≥ 18 and **npm** ≥ 9
@@ -176,7 +178,8 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 npm run dev
 ```
 
-The frontend will be available at **http://localhost:5173** and the backend API at **http://localhost:8000**.
+- **Local Dev Server:** The app will run on your machine at **`http://localhost:5173`** (with backend API at **`http://localhost:8000`**).
+- **Instant Live Demo (No local installation needed):** [**ilmbot-ai-learning-companion.vercel.app**](https://ilmbot-ai-learning-companion.vercel.app)
 
 ---
 
