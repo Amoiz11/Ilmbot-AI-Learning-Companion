@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://ilmbot-ai-learning-companion.vercel.app">
-    <img src="https://img.shields.io/badge/Live%20App-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Live App" />
+    <img src="https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Demo" />
   </a>
   <a href="https://ilmbot-ai-learning-companion-production.up.railway.app/docs">
     <img src="https://img.shields.io/badge/API%20Docs-Railway-0B0D0E?style=for-the-badge&logo=railway&logoColor=white" alt="API Docs" />
@@ -16,11 +16,11 @@
 
 ---
 
-## 🌐 Live Access
+## 🌐 Live Demo & Deployment Links
 
 | Service | URL | Status |
 | :--- | :--- | :--- |
-| **Production Web App** | [ilmbot-ai-learning-companion.vercel.app](https://ilmbot-ai-learning-companion.vercel.app) | 🟢 Live |
+| **Live Web App (Demo)** | [ilmbot-ai-learning-companion.vercel.app](https://ilmbot-ai-learning-companion.vercel.app) | 🟢 Live |
 | **Production Backend API** | [ilmbot-ai-learning-companion-production.up.railway.app](https://ilmbot-ai-learning-companion-production.up.railway.app) | 🟢 Live |
 | **Interactive API Swagger Docs** | [API Documentation (/docs)](https://ilmbot-ai-learning-companion-production.up.railway.app/docs) | 🟢 Active |
 | **GitHub Source Code** | [Amoiz11/Ilmbot-AI-Learning-Companion](https://github.com/Amoiz11/Ilmbot-AI-Learning-Companion) | 🟢 Verified |
@@ -176,7 +176,7 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 npm run dev
 ```
 
-The app will be available at ilmbot-ai-learning-companion.vercel.app
+The frontend will be available at **http://localhost:5173** and the backend API at **http://localhost:8000**.
 
 ---
 
