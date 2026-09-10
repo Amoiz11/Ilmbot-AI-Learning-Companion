@@ -55,6 +55,7 @@ export default function DocumentLibraryModal({
   isOpen,
   onClose,
   onDocumentDeleted,
+  onDocumentClick,
 }) {
   const { token: authContextToken } = useAuth();
   const token = authContextToken || localStorage.getItem('ilmbot_google_token');
@@ -113,7 +114,7 @@ export default function DocumentLibraryModal({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, confirmDeleteId, onClose]);
 
-  const handleDelete = async (docId) => {
+  const handleDelete = async (docId, convId) => {
     const activeToken = token || localStorage.getItem('ilmbot_google_token');
     if (!activeToken) return;
     setDeletingId(docId);
@@ -129,10 +130,12 @@ export default function DocumentLibraryModal({
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.detail || 'Unable to delete document.');
       }
+      const data = await res.json().catch(() => ({}));
+      const deletedConvId = data.deleted_conversation_id || convId;
       setDocuments((prev) => prev.filter((d) => d.id !== docId));
       setConfirmDeleteId(null);
       if (onDocumentDeleted) {
-        onDocumentDeleted(docId);
+        onDocumentDeleted(docId, deletedConvId);
       }
     } catch (err) {
       console.error('Error deleting document:', err);
@@ -213,37 +216,75 @@ export default function DocumentLibraryModal({
                 const isDeleting = deletingId === doc.id;
 
                 return (
-                  <div key={doc.id} className="doc-card">
-                    <div className="doc-card-info">
-                      <div className="doc-card-icon">
-                        <DocumentIcon />
-                      </div>
-                      <div className="doc-card-details">
-                        <span className="doc-card-filename" title={doc.filename}>
-                          {doc.filename}
-                        </span>
-                        <div className="doc-card-meta">
-                          <span className="doc-meta-badge">
-                            {doc.chunk_count || doc.chunkCount || 0} chunks
-                          </span>
-                          <span className="doc-meta-dot">•</span>
-                          <span className="doc-meta-date">
-                            {formatDocDate(doc.uploaded_at || doc.uploadedAt)}
-                          </span>
+                  <div
+                    key={doc.id}
+                    className={`doc-item-wrapper ${isConfirming ? 'doc-item-confirming' : ''}`}
+                  >
+                    <div
+                      className={`doc-card ${doc.conversation_id && !isConfirming ? 'doc-card-clickable' : ''}`}
+                      onClick={() => {
+                        if (!isConfirming && doc.conversation_id && onDocumentClick) {
+                          onDocumentClick(doc);
+                        }
+                      }}
+                      title={!isConfirming && doc.conversation_id ? 'Click to open conversation' : undefined}
+                    >
+                      <div className="doc-card-info">
+                        <div className="doc-card-icon">
+                          <DocumentIcon />
                         </div>
+                        <div className="doc-card-details">
+                          <span className="doc-card-filename" title={doc.filename}>
+                            {doc.filename}
+                          </span>
+                          <div className="doc-card-meta">
+                            <span className="doc-meta-badge">
+                              {doc.chunk_count || doc.chunkCount || 0} chunks
+                            </span>
+                            <span className="doc-meta-dot">•</span>
+                            <span className="doc-meta-date">
+                              {formatDocDate(doc.uploaded_at || doc.uploadedAt)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="doc-card-actions" onClick={(e) => e.stopPropagation()}>
+                        {!isConfirming && (
+                          <button
+                            className="doc-btn-delete"
+                            onClick={() => setConfirmDeleteId(doc.id)}
+                            disabled={isDeleting}
+                            title="Delete document"
+                          >
+                            <TrashIcon />
+                          </button>
+                        )}
                       </div>
                     </div>
 
-                    <div className="doc-card-actions">
-                      {isConfirming ? (
-                        <div className="doc-confirm-group">
-                          <span className="doc-confirm-prompt">Delete?</span>
+                    {isConfirming && (
+                      <div className="doc-confirm-banner" onClick={(e) => e.stopPropagation()}>
+                        <div className="doc-confirm-banner-content">
+                          <span className="doc-confirm-warning-icon">⚠️</span>
+                          <div className="doc-confirm-warning-text">
+                            <strong>
+                              {doc.conversation_id ? 'Delete document & associated chat?' : 'Delete document?'}
+                            </strong>
+                            <span>
+                              {doc.conversation_id
+                                ? 'Deleting this document will also permanently delete its linked chat conversation.'
+                                : 'Are you sure you want to permanently delete this document?'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="doc-confirm-banner-actions">
                           <button
                             className="doc-btn-confirm-delete"
-                            onClick={() => handleDelete(doc.id)}
+                            onClick={() => handleDelete(doc.id, doc.conversation_id)}
                             disabled={isDeleting}
                           >
-                            {isDeleting ? '...' : 'Yes'}
+                            {isDeleting ? 'Deleting...' : (doc.conversation_id ? 'Delete Both' : 'Delete')}
                           </button>
                           <button
                             className="doc-btn-cancel-delete"
@@ -253,17 +294,8 @@ export default function DocumentLibraryModal({
                             Cancel
                           </button>
                         </div>
-                      ) : (
-                        <button
-                          className="doc-btn-delete"
-                          onClick={() => setConfirmDeleteId(doc.id)}
-                          disabled={isDeleting}
-                          title="Delete document"
-                        >
-                          <TrashIcon />
-                        </button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}

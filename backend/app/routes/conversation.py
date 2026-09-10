@@ -78,7 +78,10 @@ def get_conversations(
     db: Session = Depends(get_db)
 ):
     try:
-        query = db.query(Conversation).filter(Conversation.user_id == current_user.id)
+        query = db.query(Conversation).filter(
+            Conversation.user_id == current_user.id,
+            Conversation.messages.any()
+        )
         if coach_type:
             query = query.filter(Conversation.coach_type == coach_type)
         conversations = query.order_by(Conversation.updated_at.desc()).all()
@@ -134,6 +137,48 @@ def delete_conversation(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Conversation unavailable."
             )
+
+        # Cascade-delete any PDF documents that were uploaded within this conversation
+        conv_messages = db.query(Message).filter(
+            Message.conversation_id == conversation_id,
+            Message.role == "user",
+            Message.extracted_content.isnot(None),
+        ).all()
+
+        doc_ids_to_delete = set()
+        for msg in conv_messages:
+            try:
+                p_data = json.loads(msg.extracted_content)
+                did = (
+                    p_data.get("pdf", {}).get("documentId")
+                    or p_data.get("pdf", {}).get("document_id")
+                    or p_data.get("documentId")
+                    or p_data.get("document_id")
+                )
+                if did:
+                    doc_ids_to_delete.add(str(did))
+            except Exception:
+                pass
+
+        if doc_ids_to_delete:
+            docs_to_remove = db.query(Document).filter(
+                Document.id.in_([UUID(d) for d in doc_ids_to_delete]),
+                Document.user_id == current_user.id,
+            ).all()
+
+            uploads_dir = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                "uploads", "documents",
+            )
+            for doc in docs_to_remove:
+                disk_name = f"{doc.id.hex}.pdf"
+                file_path = os.path.join(uploads_dir, disk_name)
+                if os.path.exists(file_path):
+                    try:
+                        os.remove(file_path)
+                    except OSError as fs_err:
+                        logger.warning("Could not delete PDF file %s from disk: %s", file_path, fs_err)
+                db.delete(doc)
 
         db.delete(conv)
         db.commit()
@@ -230,7 +275,7 @@ def switch_coach_conversation(
         last_assistant_msg = db.query(Message).filter(
             Message.conversation_id == conversation_id,
             Message.role == "assistant",
-            Message.created_at > last_user_msg.created_at
+            Message.created_at >= last_user_msg.created_at
         ).order_by(Message.created_at.asc()).first()
 
         # Create new conversation in destination coach
@@ -442,48 +487,60 @@ async def _process_chat(
             if payload.pdf_attachment.document_id not in effective_doc_ids:
                 effective_doc_ids.append(payload.pdf_attachment.document_id)
 
-        if not effective_doc_ids and conv.id:
-            prior_doc_msg = db.query(Message).filter(
+        if conv and conv.id:
+            prior_doc_msgs = db.query(Message).filter(
                 Message.conversation_id == conv.id,
                 Message.role == "user",
                 Message.extracted_content.isnot(None)
-            ).order_by(Message.created_at.desc()).first()
-            if prior_doc_msg and prior_doc_msg.extracted_content:
+            ).all()
+            for msg in prior_doc_msgs:
+                if not msg.extracted_content:
+                    continue
                 try:
-                    p_data = json.loads(prior_doc_msg.extracted_content)
-                    did = p_data.get("pdf", {}).get("documentId") or p_data.get("documentId")
+                    p_data = json.loads(msg.extracted_content)
+                    did = (
+                        p_data.get("pdf", {}).get("documentId")
+                        or p_data.get("pdf", {}).get("document_id")
+                        or p_data.get("documentId")
+                        or p_data.get("document_id")
+                    )
                     if did:
-                        effective_doc_ids.append(UUID(str(did)))
+                        u_did = UUID(str(did))
+                        if u_did not in effective_doc_ids:
+                            effective_doc_ids.append(u_did)
                 except Exception:
                     pass
 
-        if coach_type == "learning":
+        if effective_doc_ids:
             try:
                 retrieved_chunks = await get_relevant_chunks(
                     db=db,
                     user_id=current_user.id,
                     query=payload.message,
                     top_k=5,
-                    document_ids=effective_doc_ids if effective_doc_ids else None,
+                    document_ids=effective_doc_ids,
                 )
             except Exception as rag_err:
-                logger.error("Learning Coach RAG retrieval failed; continuing without documents: %s", rag_err, exc_info=True)
+                logger.error("RAG retrieval failed; continuing without documents: %s", rag_err, exc_info=True)
                 retrieved_chunks = []
+        else:
+            retrieved_chunks = []
 
-            if retrieved_chunks:
-                groq_user_content = (
-                    f"{format_document_context(retrieved_chunks)}\n\n"
-                    f"User question:\n{payload.message}"
+        if retrieved_chunks:
+            groq_user_content = (
+                f"{format_document_context(retrieved_chunks)}\n\n"
+                f"User question:\n{payload.message}"
+            )
+            citations = [
+                CitationMetadata(
+                    document_id=c["document_id"],
+                    filename=c["filename"],
+                    chunk_index=c["chunk_index"],
+                    excerpt=c["excerpt"],
                 )
-                citations = [
-                    CitationMetadata(
-                        document_id=c["document_id"],
-                        filename=c["filename"],
-                        chunk_index=c["chunk_index"],
-                        excerpt=c["excerpt"],
-                    )
-                    for c in retrieved_chunks
-                ]
+                for c in retrieved_chunks
+            ]
+            if coach_type == "learning":
                 # Hybrid PDF routing decision: retrieved PDF chunks + query + classifier
                 routing_task = asyncio.create_task(
                     groq_service.evaluate_pdf_coding_intent(
@@ -493,11 +550,11 @@ async def _process_chat(
                 )
             else:
                 routing_task = asyncio.create_task(
-                    groq_service.classify_routing(coach_type="learning", user_message=payload.message)
+                    groq_service.classify_routing(coach_type="coding", user_message=payload.message)
                 )
         else:
             routing_task = asyncio.create_task(
-                groq_service.classify_routing(coach_type="coding", user_message=payload.message)
+                groq_service.classify_routing(coach_type=coach_type, user_message=payload.message)
             )
 
         context_messages.append({"role": "user", "content": groq_user_content})

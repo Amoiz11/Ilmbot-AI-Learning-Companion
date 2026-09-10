@@ -599,8 +599,7 @@ export default function LearningCoach({ onNavigate, initialPrompt: propInitialPr
             }));
           }
         }
-        await fetchConversations('coding');
-        fetchConversations('learning');
+        // Route change effect in ConversationContext handles fetching conversations
       }).catch(err => {
         console.warn('Coach switch error:', err);
       }).finally(() => {
@@ -1253,9 +1252,31 @@ export default function LearningCoach({ onNavigate, initialPrompt: propInitialPr
           <DocumentLibraryModal
             isOpen={showDocLibrary}
             onClose={() => setShowDocLibrary(false)}
-            onDocumentDeleted={(deletedId) => {
+            onDocumentDeleted={(deletedId, deletedConvId) => {
               if (documentStatus?.id === deletedId) {
                 setDocumentStatus(null);
+              }
+              if (deletedConvId) {
+                if (activeConversationId === deletedConvId) {
+                  setActiveConversationId(null);
+                  setMessages([DEFAULT_WELCOME]);
+                  setDocumentStatus(null);
+                }
+                deleteConversation(deletedConvId);
+              }
+            }}
+            onDocumentClick={(doc) => {
+              setShowDocLibrary(false);
+              if (!doc.conversation_id) return;
+              const targetCoach = doc.coach_type || 'learning';
+              if (targetCoach === 'learning') {
+                // Same coach — just load the conversation
+                setActiveConversationId(doc.conversation_id);
+              } else {
+                // Different coach — navigate with conversation state
+                navigate(`/${targetCoach}-coach`, {
+                  state: { conversationId: doc.conversation_id }
+                });
               }
             }}
           />

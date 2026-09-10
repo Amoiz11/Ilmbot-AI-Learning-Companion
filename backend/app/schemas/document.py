@@ -1,3 +1,4 @@
+from typing import Optional
 from uuid import UUID
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
@@ -29,6 +30,8 @@ class DocumentListItem(BaseModel):
     filename: str
     uploaded_at: datetime
     chunk_count: int = 0
+    conversation_id: Optional[UUID] = None
+    coach_type: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
@@ -36,3 +39,4 @@ class DocumentListItem(BaseModel):
 class DocumentDeleteResponse(BaseModel):
     detail: str
     id: UUID
+    deleted_conversation_id: Optional[UUID] = None

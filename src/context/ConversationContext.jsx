@@ -38,14 +38,15 @@ export function ConversationProvider({ children }) {
   }, []);
 
   const getCoachTypeFromPath = () => {
-    if (location.pathname === '/learning-coach') return 'learning';
-    if (location.pathname === '/coding-coach') return 'coding';
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : location.pathname;
+    if (currentPath.includes('learning-coach')) return 'learning';
+    if (currentPath.includes('coding-coach')) return 'coding';
     return null;
   };
 
   const coachType = getCoachTypeFromPath();
 
-  const fetchConversations = async (type = coachType) => {
+  const fetchConversations = async (type = null) => {
     const currentPathCoach = getCoachTypeFromPath();
     const targetType = type || currentPathCoach;
     if (!targetType) {
@@ -57,11 +58,11 @@ export function ConversationProvider({ children }) {
     // Serve from cache immediately if present to optimize page transition speed (filtering out deleted items)
     if (conversationsCache[targetType] && conversationsCache[targetType].length > 0) {
       const cached = conversationsCache[targetType].filter(c => !deletedConvIdsRef.current.has(c.id));
-      if (targetType === getCoachTypeFromPath()) {
+      if (getCoachTypeFromPath() === targetType) {
         setConversations(cached);
         setIsLoadingConversations(false);
       }
-    } else if (targetType === getCoachTypeFromPath()) {
+    } else if (getCoachTypeFromPath() === targetType) {
       setIsLoadingConversations(true);
     }
 
@@ -73,7 +74,7 @@ export function ConversationProvider({ children }) {
         const data = await res.json();
         const validData = data.filter(c => !deletedConvIdsRef.current.has(c.id));
         setConversationsCache(prev => ({ ...prev, [targetType]: validData }));
-        if (targetType === getCoachTypeFromPath()) {
+        if (getCoachTypeFromPath() === targetType) {
           setConversations(validData);
         }
         return validData;
@@ -81,7 +82,7 @@ export function ConversationProvider({ children }) {
     } catch (err) {
       console.warn(`Failed to fetch ${targetType} conversations:`, err);
     } finally {
-      if (targetType === getCoachTypeFromPath()) {
+      if (getCoachTypeFromPath() === targetType) {
         setIsLoadingConversations(false);
       }
     }
@@ -89,13 +90,16 @@ export function ConversationProvider({ children }) {
   };
 
   // Reset active conversation & fetch list whenever route changes
-  // Skip reset when navigating via coach switch to avoid blank flash
   useEffect(() => {
+    const currentCoach = getCoachTypeFromPath();
+
     if (skipRouteResetRef.current) {
       skipRouteResetRef.current = false;
-      // Still fetch sidebar conversations in the background
-      if (coachType) {
-        fetchConversations(coachType);
+      if (currentCoach) {
+        const cached = conversationsCache[currentCoach] || [];
+        const validCached = cached.filter(c => !deletedConvIdsRef.current.has(c.id));
+        setConversations(validCached);
+        fetchConversations(currentCoach);
       }
       return;
     }
@@ -104,8 +108,11 @@ export function ConversationProvider({ children }) {
     setEditingId(null);
     setErrorBanner(null);
 
-    if (coachType) {
-      fetchConversations(coachType);
+    if (currentCoach) {
+      const cached = conversationsCache[currentCoach] || [];
+      const validCached = cached.filter(c => !deletedConvIdsRef.current.has(c.id));
+      setConversations(validCached);
+      fetchConversations(currentCoach);
     } else {
       setConversations([]);
       setIsLoadingConversations(false);

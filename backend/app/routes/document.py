@@ -13,6 +13,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.database.connection import get_db
 from app.models.user import User
 from app.models.document import Document, DocumentChunk
+from app.models.conversation import Conversation
+from app.models.message import Message
 from app.schemas.document import (
     DocumentUploadResponse,
     DocumentListItem,
@@ -281,12 +283,42 @@ def list_documents(
             .order_by(Document.uploaded_at.desc())
             .all()
         )
+
+        # Map document_id to conversation_id and coach_type
+        doc_conv_map = {}
+        msgs = (
+            db.query(Message.conversation_id, Message.extracted_content, Conversation.coach_type)
+            .join(Conversation, Conversation.id == Message.conversation_id)
+            .filter(
+                Conversation.user_id == current_user.id,
+                Message.role == "user",
+                Message.extracted_content.isnot(None),
+            )
+            .order_by(Message.created_at.desc())
+            .all()
+        )
+        for conv_id, ext_content, coach_type in msgs:
+            try:
+                p_data = json.loads(ext_content)
+                did = (
+                    p_data.get("pdf", {}).get("documentId")
+                    or p_data.get("pdf", {}).get("document_id")
+                    or p_data.get("documentId")
+                    or p_data.get("document_id")
+                )
+                if did and str(did) not in doc_conv_map:
+                    doc_conv_map[str(did)] = (conv_id, coach_type)
+            except Exception:
+                pass
+
         return [
             DocumentListItem(
                 id=row.id,
                 filename=row.filename,
                 uploaded_at=row.uploaded_at,
                 chunk_count=row.chunk_count,
+                conversation_id=doc_conv_map[str(row.id)][0] if str(row.id) in doc_conv_map else None,
+                coach_type=doc_conv_map[str(row.id)][1] if str(row.id) in doc_conv_map else None,
             )
             for row in rows
         ]
@@ -316,6 +348,33 @@ def delete_document(
                 detail="Document not found.",
             )
 
+        # Find any conversations associated with this document
+        msgs = (
+            db.query(Message.conversation_id, Message.extracted_content)
+            .join(Conversation, Conversation.id == Message.conversation_id)
+            .filter(
+                Conversation.user_id == current_user.id,
+                Message.role == "user",
+                Message.extracted_content.isnot(None),
+            )
+            .all()
+        )
+        conv_ids_to_delete = set()
+        str_doc_id = str(document_id)
+        for conv_id, ext_content in msgs:
+            try:
+                p_data = json.loads(ext_content)
+                did = (
+                    p_data.get("pdf", {}).get("documentId")
+                    or p_data.get("pdf", {}).get("document_id")
+                    or p_data.get("documentId")
+                    or p_data.get("document_id")
+                )
+                if did and str(did) == str_doc_id:
+                    conv_ids_to_delete.add(conv_id)
+            except Exception:
+                pass
+
         disk_name = f"{doc.id.hex}.pdf"
         file_path = os.path.join(_documents_upload_dir(), disk_name)
         if os.path.exists(file_path):
@@ -325,12 +384,30 @@ def delete_document(
                 logger.warning("Could not delete PDF file %s from disk: %s", file_path, fs_err)
 
         db.delete(doc)
+
+        deleted_conv_id = None
+        for cid in conv_ids_to_delete:
+            conv = (
+                db.query(Conversation)
+                .filter(Conversation.id == cid, Conversation.user_id == current_user.id)
+                .first()
+            )
+            if conv:
+                db.delete(conv)
+                deleted_conv_id = cid
+
         db.commit()
 
-        logger.info("Deleted document %s for user %s", document_id, current_user.id)
+        logger.info(
+            "Deleted document %s and associated conversation(s) %s for user %s",
+            document_id,
+            conv_ids_to_delete,
+            current_user.id,
+        )
         return DocumentDeleteResponse(
-            detail="Document deleted successfully.",
+            detail="Document and associated conversation deleted successfully.",
             id=document_id,
+            deleted_conversation_id=deleted_conv_id,
         )
     except HTTPException:
         raise

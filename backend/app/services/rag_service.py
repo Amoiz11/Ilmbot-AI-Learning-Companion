@@ -78,6 +78,9 @@ async def get_relevant_chunks(
     k = top_k if isinstance(top_k, int) and top_k > 0 else DEFAULT_TOP_K
     scoped_ids = [doc_id for doc_id in (document_ids or []) if doc_id]
 
+    if not scoped_ids:
+        return []
+
     def _fallback_attached_chunks() -> List[dict]:
         if not scoped_ids:
             return []

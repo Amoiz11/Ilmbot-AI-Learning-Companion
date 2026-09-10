@@ -549,8 +549,7 @@ export default function CodingCoach({ onNavigate, initialPrompt: propInitialProm
             }));
           }
         }
-        await fetchConversations('learning');
-        fetchConversations('coding');
+        // Route change effect in ConversationContext handles fetching conversations
       }).catch(err => {
         console.warn('Coach switch error:', err);
       }).finally(() => {
