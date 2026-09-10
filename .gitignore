@@ -43,11 +43,13 @@ backend/uploads/images/*
 !backend/uploads/documents/.gitkeep
 !backend/uploads/images/.gitkeep
 
-# Internal development docs
+# Internal development docs & presentation materials
 CURSOR_WORKLOG.md
 HANDOVER.md
 CLEANUP_SUMMARY.md
 DELETE_AUDIT_REPORT.md
+presentation.html
+Poster/
 
 # OS files
 .DS_Store
